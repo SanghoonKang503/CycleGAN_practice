@@ -24,8 +24,10 @@ def wrapper(opt):
     decay_epoch = opt['lr_decay_epochs']
     n_residual_blocks = opt['residual_blocks']
 
+    file_name = f'ep_{total_epochs}_lr_{lr}_decay_{decay_epoch}_resnum_{n_residual_blocks}'
+
     # Create sample and checkpoint directories
-    os.makedirs("generated_images/%s" % opt['dataset_name'], exist_ok=True)
+    os.makedirs("generated_images/"+file_name+"/%s" % opt['dataset_name'], exist_ok=True)
 
     # Losses
     criterion_GAN = torch.nn.MSELoss()
@@ -99,7 +101,7 @@ def wrapper(opt):
         fake_B = make_grid(fake_B, nrow=5, normalize=True)
         # Arange images along y-axis
         image_grid = torch.cat((real_A, fake_B, real_B, fake_A), 1)
-        save_image(image_grid, "generated_images/%s/%s.png" % (opt['dataset_name'], batches_done), normalize=False)
+        save_image(image_grid, "generated_images/"+file_name+"/%s/%s.png" % (opt['dataset_name'], batches_done), normalize=False)
 
 
     # ----------
