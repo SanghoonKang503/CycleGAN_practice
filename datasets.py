@@ -5,11 +5,51 @@ import torchvision.transforms as transforms
 
 from torch.utils.data import Dataset
 from PIL import Image
+from main import*
 
 def to_rgb(image):
     rgb_image = Image.new("RGB", image.size)
     rgb_image.paste(image)
     return rgb_image
+    # Image transformations
+
+def transforms_for_dataset(height, width):
+
+    transforms_ = [
+        transforms.Resize(int(height * 1.12), Image.BICUBIC),
+        transforms.RandomCrop(height, width),
+        transforms.RandomHorizontalFlip(),
+        transforms.ToTensor(),
+        transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
+    ]
+    return transforms_
+
+
+def get_train_data(name_of_dataset, bs, cpu_num, height, width):
+
+    transforms_=transforms_for_dataset(height, width)
+
+    train_set = DataLoader(
+        ImageDataset("data/%s" % name_of_dataset, transforms_=transforms_, unaligned=True),
+        batch_size=bs,
+        shuffle=True,
+        num_workers=cpu_num,
+    )
+
+    return train_set
+
+def get_test_data(name_of_dataset, height, width):
+
+    transforms_ = transforms_for_dataset(height, width)
+
+    val_set = DataLoader(
+        ImageDataset("data/%s" % name_of_dataset, transforms_=transforms_, unaligned=True, mode="test"),
+        batch_size=5,
+        shuffle=True,
+        num_workers=1,
+    )
+
+    return val_set
 
 
 class ImageDataset(Dataset):
@@ -17,8 +57,8 @@ class ImageDataset(Dataset):
         self.transform = transforms.Compose(transforms_)
         self.unaligned = unaligned
 
-        self.files_A = sorted(glob.glob(os.path.join(root, "%s/A_32" % mode) + "/*.*"))
-        self.files_B = sorted(glob.glob(os.path.join(root, "%s/B_32" % mode) + "/*.*"))
+        self.files_A = sorted(glob.glob(os.path.join(root, "%s/A_64" % mode) + "/*.*"))
+        self.files_B = sorted(glob.glob(os.path.join(root, "%s/B_64" % mode) + "/*.*"))
 
 
     def __getitem__(self, index):

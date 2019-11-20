@@ -18,6 +18,7 @@ import torch.nn as nn
 import torch
 
 def wrapper(opt):
+
     total_epochs = opt['num_epochs']
     lr = opt['learning_rate']
     decay_epoch = opt['lr_decay_epochs']
@@ -57,9 +58,7 @@ def wrapper(opt):
     D_B.apply(weights_init_normal)
 
     # Optimizers
-    optimizer_G = torch.optim.Adam(
-        itertools.chain(G_AB.parameters(), G_BA.parameters()), lr=lr, betas=(opt['b1'], opt['b2'])
-    )
+    optimizer_G = torch.optim.Adam(itertools.chain(G_AB.parameters(), G_BA.parameters()), lr=lr, betas=(opt['b1'], opt['b2']))
     optimizer_D_A = torch.optim.Adam(D_A.parameters(), lr=lr, betas=(opt['b1'], opt['b2']))
     optimizer_D_B = torch.optim.Adam(D_B.parameters(), lr=lr, betas=(opt['b1'], opt['b2']))
 
@@ -80,34 +79,13 @@ def wrapper(opt):
     fake_A_buffer = ReplayBuffer()
     fake_B_buffer = ReplayBuffer()
 
-    # Image transformations
-    transforms_ = [
-        transforms.Resize(int(opt['img_height'] * 1.12), Image.BICUBIC),
-        transforms.RandomCrop((opt['img_height'], opt['img_width'])),
-        transforms.RandomHorizontalFlip(),
-        transforms.ToTensor(),
-        transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
-    ]
-
     # Training data loader
-    dataloader = DataLoader(
-        ImageDataset("data/%s" % opt['dataset_name'], transforms_=transforms_, unaligned=True),
-        batch_size=opt['batch_size'],
-        shuffle=True,
-        num_workers=opt['n_cpu'],
-    )
-    # Test data loader
-    val_dataloader = DataLoader(
-        ImageDataset("data/%s" % opt['dataset_name'], transforms_=transforms_, unaligned=True, mode="test"),
-        batch_size=5,
-        shuffle=False,
-        num_workers=1,
-    )
-
+    train_dataloader = get_train_data(opt['dataset_name'], opt['batch_size'], opt['n_cpu'], opt['img_height'], opt['img_width'])
+    test_dataloader = get_test_data(opt['dataset_name'], opt['img_height'], opt['img_width'])
 
     def sample_images(batches_done):
         """Saves a generated sample from the test set"""
-        imgs = next(iter(val_dataloader))
+        imgs = next(iter(test_dataloader))
         G_AB.eval()
         G_BA.eval()
         real_A = Variable(imgs["A"].type(Tensor))
@@ -130,7 +108,7 @@ def wrapper(opt):
 
     prev_time = time.time()
     for epoch in range(opt['start_epoch'], total_epochs):
-        for i, batch in enumerate(dataloader):
+        for i, batch in enumerate(train_dataloader):
             # Set model input
             real_A = Variable(batch["A"].type(Tensor))
             real_B = Variable(batch["B"].type(Tensor))
@@ -217,12 +195,12 @@ def wrapper(opt):
             # --------------
 
             # Determine approximate time left
-            batches_done = epoch * len(dataloader) + i
-            batches_left = total_epochs * len(dataloader) - batches_done
+            batches_done = epoch * len(train_dataloader) + i
+            batches_left = total_epochs * len(train_dataloader) - batches_done
             time_left = datetime.timedelta(seconds=batches_left * (time.time() - prev_time))
             prev_time = time.time()
 
-            print(f'[epoch {epoch}/{total_epochs}] [Batch {i}/{len(dataloader)}] [D loss :{loss_D.item()}] [G loss :{loss_G.item()}] '
+            print(f'[epoch {epoch}/{total_epochs}] [Batch {i}/{len(train_dataloader)}] [D loss :{loss_D.item()}] [G loss :{loss_G.item()}] '
                   f'[Adv loss :{loss_GAN.item()}] [Cycle loss :{loss_cycle.item()}, Identity loss :{loss_identity.item()}] '
                   f'Rest_time : {time_left}')
 
