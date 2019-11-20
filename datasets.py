@@ -27,10 +27,10 @@ def transforms_for_dataset(height, width):
 
 def get_train_data(name_of_dataset, bs, cpu_num, height, width):
 
-    transforms_=transforms_for_dataset(height, width)
+    transforms__=transforms_for_dataset(height, width)
 
     train_set = DataLoader(
-        ImageDataset("data/%s" % name_of_dataset, transforms_=transforms_, unaligned=True),
+        ImageDataset("data/%s" % name_of_dataset, transforms_=transforms__, unaligned=True),
         batch_size=bs,
         shuffle=True,
         num_workers=cpu_num,
@@ -40,10 +40,10 @@ def get_train_data(name_of_dataset, bs, cpu_num, height, width):
 
 def get_test_data(name_of_dataset, height, width):
 
-    transforms_ = transforms_for_dataset(height, width)
+    transforms__ = transforms_for_dataset(height, width)
 
     val_set = DataLoader(
-        ImageDataset("data/%s" % name_of_dataset, transforms_=transforms_, unaligned=True, mode="test"),
+        ImageDataset("data/%s" % name_of_dataset, transforms_=transforms__, unaligned=True, mode="test"),
         batch_size=5,
         shuffle=True,
         num_workers=1,
